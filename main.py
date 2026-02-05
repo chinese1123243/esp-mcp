@@ -654,7 +654,7 @@ def handle_build_esp_project(args: dict) -> dict:
     else:
         build_cmd = "idf.py build"
 
-    returncode, stdout, stderr = run_command_async(f'bash -c "source {export_script_bash} && {build_cmd}"')
+    returncode, stdout, stderr = run_command_async(f'bash -c "source {shlex.quote(export_script_bash)} && {build_cmd}"')
 
     elapsed_time = time.time() - start_time
     elapsed_minutes = int(elapsed_time // 60)
@@ -691,7 +691,7 @@ def handle_setup_project_esp_target(args: dict) -> dict:
         processed_idf_path = idf_path if (idf_path and idf_path.strip()) else None
         # get_export_script already returns bash-compatible path on Windows
         export_script_bash = get_export_script(processed_idf_path)
-        returncode, stdout, stderr = run_command_async(f"bash -c 'source {export_script_bash} && idf.py set-target {target}'")
+        returncode, stdout, stderr = run_command_async(f"bash -c 'source {shlex.quote(export_script_bash)} && idf.py set-target {shlex.quote(target)}'")
         
         try:
             with open('mcp-set-target.log', 'w+') as log_file:
@@ -726,7 +726,7 @@ def handle_create_esp_project(args: dict) -> dict:
         # Convert project path to bash-compatible path
         from esp_utils import convert_to_bash_path
         project_path_bash = convert_to_bash_path(project_path)
-        returncode, stdout, stderr = run_command_async(f"bash -c 'source {export_script_bash} && idf.py create-project --path {project_path_bash} {project_name}'")
+        returncode, stdout, stderr = run_command_async(f"bash -c 'source {shlex.quote(export_script_bash)} && idf.py create-project --path {shlex.quote(project_path_bash)} {shlex.quote(project_name)}'")
         
         try:
             with open('mcp-project-root-path.log', 'w+') as log_file:
@@ -764,9 +764,9 @@ def handle_flash_esp_project(args: dict) -> dict:
         export_script_bash = get_export_script()
 
         if port:
-            flash_cmd = f"bash -c 'source {export_script_bash} && idf.py -p {port} flash'"
+            flash_cmd = f"bash -c 'source {shlex.quote(export_script_bash)} && idf.py -p {shlex.quote(port)} flash'"
         else:
-            flash_cmd = f"bash -c 'source {export_script_bash} && idf.py flash'"
+            flash_cmd = f"bash -c 'source {shlex.quote(export_script_bash)} && idf.py flash'"
 
         returncode, stdout, stderr = run_command_async(flash_cmd)
 
@@ -872,10 +872,10 @@ def handle_run_pytest(args: dict) -> dict:
         # get_export_script already returns bash-compatible path on Windows
         export_script_bash = get_export_script(idf_path if (idf_path and idf_path.strip()) else None)
 
-        pytest_cmd = f"pytest {test_path}"
+        pytest_cmd = f"pytest {shlex.quote(test_path)}"
         if pytest_args:
-            pytest_cmd += f" {pytest_args}"
-        full_cmd = f"bash -c 'source {export_script_bash} && {pytest_cmd}'"
+            pytest_cmd += f" {shlex.quote(pytest_args)}"
+        full_cmd = f"bash -c 'source {shlex.quote(export_script_bash)} && {pytest_cmd}'"
 
         returncode, stdout, stderr = run_command_async(full_cmd)
 
@@ -919,7 +919,7 @@ def handle_clean_esp_project(args: dict) -> dict:
         export_script_bash = get_export_script(idf_path if (idf_path and idf_path.strip()) else None)
         
         clean_cmd = "idf.py fullclean" if full_clean else "idf.py clean"
-        returncode, stdout, stderr = run_command_async(f"bash -c 'source {export_script_bash} && {clean_cmd}'")
+        returncode, stdout, stderr = run_command_async(f"bash -c 'source {shlex.quote(export_script_bash)} && {clean_cmd}'")
         
         try:
             with open('mcp-clean.log', 'w+') as log_file:
@@ -957,9 +957,9 @@ def handle_erase_flash_esp(args: dict) -> dict:
         os.chdir(project_path)
         # get_export_script already returns bash-compatible path on Windows
         export_script_bash = get_export_script(idf_path if (idf_path and idf_path.strip()) else None)
-        erase_cmd = f"bash -c 'source {export_script_bash} && idf.py erase-flash"
+        erase_cmd = f"bash -c 'source {shlex.quote(export_script_bash)} && idf.py erase-flash"
         if port:
-            erase_cmd += f" -p {port}"
+            erase_cmd += f" -p {shlex.quote(port)}"
         erase_cmd += f" --baud {baud}'"
         
         returncode, stdout, stderr = run_command_async(erase_cmd)
@@ -1002,9 +1002,9 @@ def handle_monitor_esp(args: dict) -> dict:
         export_script_bash = get_export_script(idf_path if (idf_path and idf_path.strip()) else None)
         
         # Monitor requires interaction, so we'll note this limitation
-        monitor_cmd = f"bash -c 'source {export_script_bash} && idf.py monitor"
+        monitor_cmd = f"bash -c 'source {shlex.quote(export_script_bash)} && idf.py monitor"
         if port:
-            monitor_cmd += f" -p {port}"
+            monitor_cmd += f" -p {shlex.quote(port)}"
         monitor_cmd += f" --baud {baud}'"
         
         return {"result": "Monitor command requires interactive terminal. Please run manually:\n" + monitor_cmd}
@@ -1038,9 +1038,9 @@ def handle_flash_and_monitor_esp(args: dict) -> dict:
         export_script_bash = get_export_script(idf_path if (idf_path and idf_path.strip()) else None)
         
         # Flash and monitor requires interaction, so we'll note this limitation
-        cmd = f"bash -c 'source {export_script_bash} && idf.py flash monitor"
+        cmd = f"bash -c 'source {shlex.quote(export_script_bash)} && idf.py flash monitor"
         if port:
-            cmd += f" -p {port}"
+            cmd += f" -p {shlex.quote(port)}"
         if baud:
             cmd += f" --baud {baud}'"
         
@@ -1073,7 +1073,7 @@ def handle_menuconfig_esp(args: dict) -> dict:
         export_script_bash = get_export_script(idf_path if (idf_path and idf_path.strip()) else None)
         
         # Menuconfig requires interactive terminal
-        cmd = f"bash -c 'source {export_script_bash} && idf.py menuconfig'"
+        cmd = f"bash -c 'source {shlex.quote(export_script_bash)} && idf.py menuconfig'"
         return {"result": "Menuconfig requires interactive terminal. Please run manually:\n" + cmd}
     except (ValueError, FileNotFoundError) as e:
         error_msg = f"Failed to setup ESP-IDF environment: {str(e)}"
@@ -1226,7 +1226,7 @@ def handle_set_esp_partition(args: dict) -> dict:
         
         # Set partition table via menuconfig or directly
         # Using idf.py with partition table option
-        cmd = f"bash -c 'source {export_script_bash} && idf.py set-partition-table {partition_table}'"
+        cmd = f"bash -c 'source {shlex.quote(export_script_bash)} && idf.py set-partition-table {shlex.quote(partition_table)}'"
         
         returncode, stdout, stderr = run_command_async(cmd)
         
@@ -1371,9 +1371,9 @@ def handle_gdb_attach(args: dict) -> dict:
         export_script_bash = get_export_script(idf_path if (idf_path and idf_path.strip()) else None)
         
         # Build GDB command
-        gdb_cmd = f"bash -c 'source {export_script_bash} && idf.py gdb"
+        gdb_cmd = f"bash -c 'source {shlex.quote(export_script_bash)} && idf.py gdb"
         if port:
-            gdb_cmd += f" -p {port}"
+            gdb_cmd += f" -p {shlex.quote(port)}"
         gdb_cmd += "'"
         
         instructions = (
@@ -1434,9 +1434,9 @@ def handle_get_core_dump(args: dict) -> dict:
             return {"result": "Core dump is not enabled in sdkconfig. To enable:\n1. Run: idf.py menuconfig\n2. Navigate to Component config -> Core to Core communication\n3. Enable 'Enable Core Dump'\n4. Save and rebuild the project"}
         
         # Get core dump (export_script_bash already converted)
-        core_cmd = f"bash -c 'source {export_script_bash} && idf.py coredump-info"
+        core_cmd = f"bash -c 'source {shlex.quote(export_script_bash)} && idf.py coredump-info"
         if port:
-            core_cmd += f" -p {port}"
+            core_cmd += f" -p {shlex.quote(port)}"
         core_cmd += "'"
         
         returncode, stdout, stderr = run_command_async(core_cmd)
