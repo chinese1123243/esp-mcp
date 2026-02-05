@@ -80,47 +80,71 @@ class MCPConfig:
         # Load timeout settings
         if 'ESP_MCP_TIMEOUT' in os.environ:
             try:
-                config.DEFAULT_COMMAND_TIMEOUT = int(os.environ['ESP_MCP_TIMEOUT'])
-                logger.debug(f"Loaded timeout from env: {config.DEFAULT_COMMAND_TIMEOUT}s")
+                value = int(os.environ['ESP_MCP_TIMEOUT'])
+                if value > 0:
+                    config.DEFAULT_COMMAND_TIMEOUT = value
+                    logger.debug(f"Loaded timeout from env: {config.DEFAULT_COMMAND_TIMEOUT}s")
+                else:
+                    logger.warning("Invalid ESP_MCP_TIMEOUT value (must be > 0), using default")
             except ValueError:
-                logger.warning(f"Invalid ESP_MCP_TIMEOUT value, using default")
+                logger.warning("Invalid ESP_MCP_TIMEOUT value, using default")
         
         if 'ESP_MCP_SERIAL_TIMEOUT' in os.environ:
             try:
-                config.SERIAL_PORT_TIMEOUT = int(os.environ['ESP_MCP_SERIAL_TIMEOUT'])
-                logger.debug(f"Loaded serial timeout from env: {config.SERIAL_PORT_TIMEOUT}s")
+                value = int(os.environ['ESP_MCP_SERIAL_TIMEOUT'])
+                if value > 0:
+                    config.SERIAL_PORT_TIMEOUT = value
+                    logger.debug(f"Loaded serial timeout from env: {config.SERIAL_PORT_TIMEOUT}s")
+                else:
+                    logger.warning("Invalid ESP_MCP_SERIAL_TIMEOUT value (must be > 0), using default")
             except ValueError:
-                logger.warning(f"Invalid ESP_MCP_SERIAL_TIMEOUT value, using default")
+                logger.warning("Invalid ESP_MCP_SERIAL_TIMEOUT value, using default")
         
         # Load baud rate settings
         if 'ESP_MCP_FLASH_BAUD' in os.environ:
             try:
-                config.DEFAULT_FLASH_BAUD = int(os.environ['ESP_MCP_FLASH_BAUD'])
-                logger.debug(f"Loaded flash baud from env: {config.DEFAULT_FLASH_BAUD}")
+                value = int(os.environ['ESP_MCP_FLASH_BAUD'])
+                if value > 0:
+                    config.DEFAULT_FLASH_BAUD = value
+                    logger.debug(f"Loaded flash baud from env: {config.DEFAULT_FLASH_BAUD}")
+                else:
+                    logger.warning("Invalid ESP_MCP_FLASH_BAUD value (must be > 0), using default")
             except ValueError:
-                logger.warning(f"Invalid ESP_MCP_FLASH_BAUD value, using default")
+                logger.warning("Invalid ESP_MCP_FLASH_BAUD value, using default")
         
         if 'ESP_MCP_MONITOR_BAUD' in os.environ:
             try:
-                config.DEFAULT_MONITOR_BAUD = int(os.environ['ESP_MCP_MONITOR_BAUD'])
-                logger.debug(f"Loaded monitor baud from env: {config.DEFAULT_MONITOR_BAUD}")
+                value = int(os.environ['ESP_MCP_MONITOR_BAUD'])
+                if value > 0:
+                    config.DEFAULT_MONITOR_BAUD = value
+                    logger.debug(f"Loaded monitor baud from env: {config.DEFAULT_MONITOR_BAUD}")
+                else:
+                    logger.warning("Invalid ESP_MCP_MONITOR_BAUD value (must be > 0), using default")
             except ValueError:
-                logger.warning(f"Invalid ESP_MCP_MONITOR_BAUD value, using default")
+                logger.warning("Invalid ESP_MCP_MONITOR_BAUD value, using default")
         
         # Load limit settings
         if 'ESP_MCP_MAX_ERRORS' in os.environ:
             try:
-                config.MAX_ERRORS = int(os.environ['ESP_MCP_MAX_ERRORS'])
-                logger.debug(f"Loaded max errors from env: {config.MAX_ERRORS}")
+                value = int(os.environ['ESP_MCP_MAX_ERRORS'])
+                if value > 0:
+                    config.MAX_ERRORS = value
+                    logger.debug(f"Loaded max errors from env: {config.MAX_ERRORS}")
+                else:
+                    logger.warning("Invalid ESP_MCP_MAX_ERRORS value (must be > 0), using default")
             except ValueError:
-                logger.warning(f"Invalid ESP_MCP_MAX_ERRORS value, using default")
+                logger.warning("Invalid ESP_MCP_MAX_ERRORS value, using default")
         
         if 'ESP_MCP_MAX_WARNINGS' in os.environ:
             try:
-                config.MAX_WARNINGS = int(os.environ['ESP_MCP_MAX_WARNINGS'])
-                logger.debug(f"Loaded max warnings from env: {config.MAX_WARNINGS}")
+                value = int(os.environ['ESP_MCP_MAX_WARNINGS'])
+                if value > 0:
+                    config.MAX_WARNINGS = value
+                    logger.debug(f"Loaded max warnings from env: {config.MAX_WARNINGS}")
+                else:
+                    logger.warning("Invalid ESP_MCP_MAX_WARNINGS value (must be > 0), using default")
             except ValueError:
-                logger.warning(f"Invalid ESP_MCP_MAX_WARNINGS value, using default")
+                logger.warning("Invalid ESP_MCP_MAX_WARNINGS value, using default")
         
         return config
     
