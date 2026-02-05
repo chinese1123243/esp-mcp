@@ -4,8 +4,12 @@ Utility functions for ESP-IDF tools
 import os
 import logging
 from typing import Tuple
+from config import get_config
 
 logger = logging.getLogger(__name__)
+
+# Get global configuration
+cfg = get_config()
 
 
 def run_command_async(command: str) -> Tuple[int, str, str]:
@@ -27,20 +31,20 @@ def run_command_async(command: str) -> Tuple[int, str, str]:
             shell=True,
             capture_output=True,
             text=True,
-            encoding='utf-8',
-            errors='replace',  # Replace invalid characters instead of raising error
-            timeout=300  # 5 minutes timeout
+            encoding=cfg.DEFAULT_ENCODING,
+            errors=cfg.ENCODING_ERRORS,
+            timeout=cfg.DEFAULT_COMMAND_TIMEOUT
         )
         
         logger.debug(f"Command executed: {command}")
         logger.debug(f"Return code: {result.returncode}")
-        logger.debug(f"Stdout: {result.stdout[:200]}...")
-        logger.debug(f"Stderr: {result.stderr[:200]}...")
+        logger.debug(f"Stdout: {result.stdout[:cfg.LOG_DEBUG_LENGTH]}...")
+        logger.debug(f"Stderr: {result.stderr[:cfg.LOG_DEBUG_LENGTH]}...")
         
         return result.returncode, result.stdout, result.stderr
     except subprocess.TimeoutExpired as e:
         logger.error(f"Command timeout: {e}")
-        return 1, "", f"Command timeout after 300 seconds: {str(e)}"
+        return 1, "", f"Command timeout after {cfg.DEFAULT_COMMAND_TIMEOUT} seconds: {str(e)}"
     except Exception as e:
         logger.error(f"Error executing command: {e}")
         return 1, "", f"Error executing command: {str(e)}"
@@ -152,8 +156,8 @@ def list_serial_ports() -> Tuple[int, str, str]:
         if os.name == 'nt':  # Windows
             # Use fully-qualified path to prevent command hijacking
             # Check if mode.com exists in System32 first
-            system_root = os.environ.get("SystemRoot", r"C:\Windows")
-            mode_com_path = os.path.join(system_root, "System32", "mode.com")
+            system_root = cfg.get_system_root()
+            mode_com_path = os.path.join(system_root, cfg.MODE_COM_PATH)
             
             # Use fully-qualified path if it exists, otherwise fall back to "mode"
             if os.path.exists(mode_com_path):
@@ -167,9 +171,9 @@ def list_serial_ports() -> Tuple[int, str, str]:
                 command,
                 capture_output=True,
                 text=True,
-                encoding='utf-8',
-                errors='replace',
-                timeout=10
+                encoding=cfg.DEFAULT_ENCODING,
+                errors=cfg.ENCODING_ERRORS,
+                timeout=cfg.SERIAL_PORT_TIMEOUT
             )
             if result.returncode == 0:
                 # Parse COM ports from mode output
@@ -199,16 +203,11 @@ def list_serial_ports() -> Tuple[int, str, str]:
         
         # Fallback: try common port patterns
         logger.warning("Using fallback port list")
-        common_ports = ["COM1", "COM2", "COM3", "COM4", "COM5", "COM6",
-                       "/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyACM0", "/dev/ttyACM1",
-                       "/dev/cu.usbserial-*", "/dev/cu.SLAB_USBtoUART"]
-        port_info = "Common ESP device ports to try:\n" + "\n".join(common_ports)
+        port_info = "Common ESP device ports to try:\n" + "\n".join(cfg.COMMON_SERIAL_PORTS)
         return 0, port_info, "Note: Could not auto-detect ports, showing common ports"
         
     except Exception as e:
         # Fallback: try common port patterns
         logger.warning(f"Failed to list serial ports: {e}")
-        common_ports = ["COM1", "COM2", "COM3", "COM4", "COM5", "COM6",
-                       "/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyACM0", "/dev/ttyACM1"]
-        port_info = "Common ESP device ports to try:\n" + "\n".join(common_ports)
+        port_info = "Common ESP device ports to try:\n" + "\n".join(cfg.COMMON_SERIAL_PORTS)
         return 0, port_info, f"Note: Could not auto-detect ports. Error: {str(e)}"

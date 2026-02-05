@@ -12,6 +12,10 @@ import traceback
 from typing import Any, Optional
 
 from esp_utils import run_command_async, get_export_script, list_serial_ports, get_esp_idf_dir
+from config import get_config
+
+# Load configuration
+cfg = get_config()
 
 # Configure stdio for proper MCP communication
 sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
@@ -943,7 +947,7 @@ def handle_erase_flash_esp(args: dict) -> dict:
     """Handle erase_flash_esp"""
     project_path = args.get("project_path", "")
     port = args.get("port")
-    baud = args.get("baud", 460800)
+    baud = args.get("baud", cfg.DEFAULT_FLASH_BAUD)
     idf_path = args.get("idf_path")
     
     log.info(f"Erasing flash on ESP device at {project_path} on port {port}")
@@ -986,7 +990,7 @@ def handle_monitor_esp(args: dict) -> dict:
     """Handle monitor_esp"""
     project_path = args.get("project_path", "")
     port = args.get("port")
-    baud = args.get("baud", 115200)
+    baud = args.get("baud", cfg.DEFAULT_MONITOR_BAUD)
     idf_path = args.get("idf_path")
     
     log.info(f"Starting monitor for ESP device at {project_path}")
@@ -1191,9 +1195,9 @@ def handle_get_project_config(args: dict) -> dict:
                         return {"result": line.strip()}
             return {"error": f"Config key '{config_key}' not found"}
         else:
-            # Return first 100 lines of config
+            # Return first N lines of config (configurable)
             with open(config_file, 'r', encoding='utf-8', errors='ignore') as f:
-                lines = f.readlines()[:100]
+                lines = f.readlines()[:cfg.CONFIG_PREVIEW_LINES]
             return {"result": f"Project Configuration ({config_file}):\n" + "".join(lines)}
     except Exception as e:
         error_msg = f"Unexpected error: {str(e)}"
@@ -1550,7 +1554,7 @@ def handle_get_task_stats(args: dict) -> dict:
 def handle_read_file(args: dict) -> dict:
     """Handle read_file"""
     file_path = args.get("file_path", "")
-    max_lines = args.get("max_lines", 100)
+    max_lines = args.get("max_lines", cfg.DEFAULT_MAX_LINES)
     
     log.info(f"Reading file: {file_path}")
     
@@ -1711,9 +1715,9 @@ def handle_parse_build_log(args: dict) -> dict:
                 "warnings_count": len(warnings),
                 "info_count": len(info_messages)
             },
-            "errors": errors[:20],  # Limit to first 20 errors
-            "warnings": warnings[:20],  # Limit to first 20 warnings
-            "info": info_messages[:10],  # Limit to first 10 info messages
+            "errors": errors[:cfg.MAX_ERRORS],  # Limit to first N errors
+            "warnings": warnings[:cfg.MAX_WARNINGS],  # Limit to first N warnings
+            "info": info_messages[:cfg.MAX_INFO_MESSAGES],  # Limit to first N info messages
             "has_errors": len(errors) > 0,
             "has_warnings": len(warnings) > 0
         }
@@ -1804,7 +1808,7 @@ def handle_analyze_memory_map(args: dict) -> dict:
                         pass
         
         # Sort symbols by size (largest first)
-        symbols_sorted = sorted(symbols, key=lambda x: x["size"], reverse=True)[:50]
+        symbols_sorted = sorted(symbols, key=lambda x: x["size"], reverse=True)[:cfg.MAX_SYMBOLS]
         
         # Calculate usage statistics
         result = {
@@ -1901,9 +1905,9 @@ def handle_compare_sdkconfig(args: dict) -> dict:
                 "removed_count": len(removed),
                 "modified_count": len(modified)
             },
-            "added": added[:50],  # Limit to first 50
-            "removed": removed[:50],
-            "modified": modified[:100]  # Limit to first 100
+            "added": added[:cfg.MAX_CONFIG_DIFF_ITEMS],  # Limit to first N added
+            "removed": removed[:cfg.MAX_CONFIG_DIFF_ITEMS],
+            "modified": modified[:cfg.MAX_CONFIG_DIFF_MODIFIED]  # Limit to first N modified
         }
         
         return {"result": json.dumps(result, indent=2, ensure_ascii=False)}
@@ -2191,9 +2195,9 @@ def handle_format_device_log(args: dict) -> dict:
                 "crashes_count": len(crashes),
                 "errors_count": len(errors)
             },
-            "entries": log_entries[:200],  # Limit to first 200 entries
-            "crashes": crashes[:10],  # Limit to first 10 crashes
-            "errors": errors[:20],  # Limit to first 20 errors
+            "entries": log_entries[:cfg.MAX_LOG_ENTRIES],  # Limit to first N entries
+            "crashes": crashes[:cfg.MAX_CRASHES],  # Limit to first N crashes
+            "errors": errors[:cfg.MAX_LOG_ERRORS],  # Limit to first N errors
             "recommendations": recommendations
         }
         
@@ -2326,9 +2330,9 @@ class ESPMCPServer:
             "jsonrpc": "2.0",
             "id": req_id,
             "result": {
-                "protocolVersion": "2024-11-05",
+                "protocolVersion": cfg.PROTOCOL_VERSION,
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "esp-mcp", "version": "1.0.0"},
+                "serverInfo": {"name": cfg.SERVER_NAME, "version": cfg.SERVER_VERSION},
                 "instructions": base_instructions + path_info
             }
         }
