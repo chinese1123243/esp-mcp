@@ -150,8 +150,21 @@ def list_serial_ports() -> Tuple[int, str, str]:
     try:
         # Try to list COM ports on Windows using mode command
         if os.name == 'nt':  # Windows
+            # Use fully-qualified path to prevent command hijacking
+            # Check if mode.com exists in System32 first
+            system_root = os.environ.get("SystemRoot", r"C:\Windows")
+            mode_com_path = os.path.join(system_root, "System32", "mode.com")
+            
+            # Use fully-qualified path if it exists, otherwise fall back to "mode"
+            if os.path.exists(mode_com_path):
+                command = [mode_com_path]
+                logger.debug(f"Using fully-qualified mode.com path: {mode_com_path}")
+            else:
+                command = ["mode"]
+                logger.debug("Using fallback 'mode' command")
+            
             result = subprocess.run(
-                ["mode"],
+                command,
                 capture_output=True,
                 text=True,
                 encoding='utf-8',
